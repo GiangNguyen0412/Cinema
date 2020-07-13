@@ -1,0 +1,79 @@
+<html>
+<head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<title>HTML5 local video file player example</title>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="googlebot" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+<link rel="stylesheet" type="text/css" href="/css/normalize.css">
+
+<link rel="stylesheet" type="text/css" href="/css/result-light.css">
+
+
+<style id="compiled-css" type="text/css">
+video, input {
+	display: block;
+}
+
+input {
+	width: 100%;
+}
+
+.info {
+	background-color: aqua;
+}
+
+.error {
+	background-color: red;
+	color: white;
+}
+</style>
+
+</head>
+<body>
+	<h1>HTML5 local video file player example</h1>
+	<div id="message" class="info">Can play type "video/mp4": maybe</div>
+	<input type="file" accept="video/*">
+	<video controls="" autoplay=""></video>
+
+
+	<script type="text/javascript">//<![CDATA[
+
+
+(function localFileVideoPlayer() {
+	'use strict'
+  var URL = window.URL || window.webkitURL
+  var displayMessage = function (message, isError) {
+    var element = document.querySelector('#message')
+    element.innerHTML = message
+    element.className = isError ? 'error' : 'info'
+  }
+  var playSelectedFile = function (event) {
+    var file = this.files[0]
+    var type = file.type
+    var videoNode = document.querySelector('video')
+    var canPlay = videoNode.canPlayType(type)
+    if (canPlay === '') canPlay = 'no'
+    var message = 'Can play type "' + type + '": ' + canPlay
+    var isError = canPlay === 'no'
+    displayMessage(message, isError)
+
+    if (isError) {
+      return
+    }
+
+    var fileURL = URL.createObjectURL(file)
+    videoNode.src = fileURL
+  }
+  var inputNode = document.querySelector('input')
+  inputNode.addEventListener('change', playSelectedFile, false)
+})()
+
+
+  //]]></script>
+
+</body>
+</html>
