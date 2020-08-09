@@ -38,9 +38,9 @@ import 'codemirror/mode/coffeescript/coffeescript.js'
 import 'codemirror/mode/crystal/crystal.js'
 
 const videos = [
-  { id: 'ZuuVjuLNvFY', name: 'JUNNY - kontra (Feat. Lil Gimch, Keeflow)' },
-  { id: 'PYE7jXNjFWw', name: 'T W L V - Follow' },
   { id: 'ld8ugY47cps', name: 'SLCHLD - I can\'t love you anymore' },
+  { id: 'ZuuVjuLNvFY', name: 'JUNNY - kontra (Feat. Lil Gimch, Keeflow)' },
+  { id: 'PYE7jXNjFWw', name: 'T W L V - Follow' },  
   { id: null, name: '<none>' },
 ];
 
@@ -65,13 +65,15 @@ class Room extends React.Component {
                   videoIndex: defaultVideo,
                   suggestedQuality: 'auto',
                   volume: 1,
-                  paused: false
+                  paused: false,
+                  startSeconds: 40
                 }
     this.handlePause = this.handlePause.bind(this);
     this.handlePlayerPause = this.handlePlayerPause.bind(this);
     this.handlePlayerPlay = this.handlePlayerPlay.bind(this);
     this.handleVolume = this.handleVolume.bind(this);
     this.handleQuality = this.handleQuality.bind(this);
+    this.handleStateChange = this.handleStateChange.bind(this);
     
     socket.on('receive code', (payload) => this.updateCodeInState(payload));
     socket.on('receive change mode', (newMode) => this.updateModeInState(newMode))
@@ -116,6 +118,11 @@ class Room extends React.Component {
 
   handlePlayerPause() {
     this.setState({ paused: true });
+    this.setState({startSeconds: 20});
+
+    console.log('state change ##############################');
+    this.forceUpdate();
+
   }
 
   handlePlayerPlay() {
@@ -132,6 +139,10 @@ class Room extends React.Component {
     this.setState({
       suggestedQuality: qualities[event.target.selectedIndex],
     });
+  }
+
+  handleStateChange(event) {
+    console.log('state changed : ' + event.data + ' -- ' + event.target.getCurrentTime());
   }
 
   sendUsersAndCode() {
@@ -220,7 +231,7 @@ class Room extends React.Component {
     };
 
     const {
-      videoIndex, volume, paused, suggestedQuality,
+      videoIndex, volume, paused, suggestedQuality, startSeconds
     } = this.state;
 
     const video = videos[videoIndex];
@@ -257,7 +268,7 @@ class Room extends React.Component {
                   onClick={() => this.selectVideo(index)}
                 >
                   {choice.name}
-                </a>
+                </a>             
               ))}
             </div>
             <h5>
@@ -308,6 +319,8 @@ class Room extends React.Component {
               paused={paused}
               onPause={this.handlePlayerPause}
               onPlaying={this.handlePlayerPlay}
+              onStateChange={this.handleStateChange}
+              startSeconds={startSeconds}
             />
           </div>
         </div>
