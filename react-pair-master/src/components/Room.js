@@ -37,22 +37,6 @@ import 'codemirror/mode/erlang/erlang.js'
 import 'codemirror/mode/coffeescript/coffeescript.js'
 import 'codemirror/mode/crystal/crystal.js'
 
-const videos = [
-  { id: 'ld8ugY47cps', name: 'SLCHLD - I can\'t love you anymore' },
-  { id: 'ZuuVjuLNvFY', name: 'JUNNY - kontra (Feat. Lil Gimch, Keeflow)' },
-  { id: 'PYE7jXNjFWw', name: 'T W L V - Follow' },  
-  { id: null, name: '<none>' },
-];
-
-const qualities = ['auto', '240', '380', '480', '720', '1080', '1440', '2160'];
-
-const hashVideoRx = /^#!\/video\/(\d)$/;
-const hash = typeof window.location !== 'undefined'
-  ? window.location.hash : ''; // eslint-disable-line no-undef
-const defaultVideo = hashVideoRx.test(hash)
-  ? parseInt(hash.replace(hashVideoRx, '$1'), 10)
-  : 0;
-
 class Room extends React.Component {
   constructor(props) {
     super(props)
@@ -61,19 +45,8 @@ class Room extends React.Component {
                   mode: 'javascript', 
                   theme: 'eclipse', 
                   users: [], 
-                  currentlyTyping: null,
-                  videoIndex: defaultVideo,
-                  suggestedQuality: 'auto',
-                  volume: 1,
-                  paused: false,
-                  startSeconds: 40
+                  currentlyTyping: null
                 }
-    this.handlePause = this.handlePause.bind(this);
-    this.handlePlayerPause = this.handlePlayerPause.bind(this);
-    this.handlePlayerPlay = this.handlePlayerPlay.bind(this);
-    this.handleVolume = this.handleVolume.bind(this);
-    this.handleQuality = this.handleQuality.bind(this);
-    this.handleStateChange = this.handleStateChange.bind(this);
     
     socket.on('receive code', (payload) => this.updateCodeInState(payload));
     socket.on('receive change mode', (newMode) => this.updateModeInState(newMode))
@@ -81,6 +54,29 @@ class Room extends React.Component {
     socket.on('load users and code', () => this.sendUsersAndCode())
     socket.on('receive users and code', (payload) => this.updateUsersAndCodeInState(payload))
     socket.on('user left room', (user) => this.removeUser(user))
+
+    this.init();
+    this.video = 'ld8ugY47cps' //video id
+
+    window['onYouTubeIframeAPIReady'] = (e) => {
+      this.YT = window['YT'];
+      this.reframed = false;
+      this.player = new window['YT'].Player('player', {
+        videoId: this.video,
+        width: 680,
+        height: 480,
+        events: {
+          'onStateChange': this.onPlayerStateChange.bind(this),
+          'onError': this.onPlayerError.bind(this),
+          'onReady': (e) => {
+            if (!this.reframed) {
+              this.reframed = true;
+              reframe(e.target.a);
+            }
+          }
+        }
+      });
+    };
   }
 
   componentDidMount() {
@@ -104,45 +100,6 @@ class Room extends React.Component {
     const users = [...this.state.users, user]
     socket.emit('room', {room: nextProps.challenge.id, user: user});
     this.setState({users: users})
-  }
-
-  selectVideo(index) {
-    this.setState({ videoIndex: index });
-  }
-
-  handlePause(event) {
-    this.setState({
-      paused: event.target.checked,
-    });
-  }
-
-  handlePlayerPause() {
-    this.setState({ paused: true });
-    this.setState({startSeconds: 20});
-
-    console.log('state change ##############################');
-    this.forceUpdate();
-
-  }
-
-  handlePlayerPlay() {
-    this.setState({ paused: false });
-  }
-
-  handleVolume(event) {
-    this.setState({
-      volume: parseFloat(event.target.value),
-    });
-  }
-
-  handleQuality(event) {
-    this.setState({
-      suggestedQuality: qualities[event.target.selectedIndex],
-    });
-  }
-
-  handleStateChange(event) {
-    console.log('state changed : ' + event.data + ' -- ' + event.target.getCurrentTime());
   }
 
   sendUsersAndCode() {
@@ -222,19 +179,8 @@ class Room extends React.Component {
         theme: this.state.theme
     };
 
-    const opts = {
-      height: '390',
-      width: '640',
-      playerVars: {
-        autoplay: 1
-      }
-    };
 
-    const {
-      videoIndex, volume, paused, suggestedQuality, startSeconds
-    } = this.state;
-
-    const video = videos[videoIndex];
+    const style = '.max-width-1024 { width: 680px; height: 880px; margin: 0 auto; } .embed-iframe {height: 880px;}';
 
     return (
       <div>
@@ -250,83 +196,66 @@ class Room extends React.Component {
         <Button onClick={this.clearCode.bind(this)} className="col-lg-12">clear code</Button>
 
         <p/>
-
         <br/>
         
-
-        <div className="row">
-          <div className="col s4">
-            <h5>
-              Video
-            </h5>
-            <div className="collection">
-              {videos.map((choice, index) => (
-                <a
-                  key={choice.id}
-                  href={`#!/video/${index}`}
-                  className={`collection-item ${video === choice ? 'active' : ''}`}
-                  onClick={() => this.selectVideo(index)}
-                >
-                  {choice.name}
-                </a>             
-              ))}
+        
+        <p/> 
+        <br/>
+        <div>
+          <style>{style}</style>
+          <div className="max-width-1024">
+            <div className="embed-responsive embed-responsive-16by9 " id="player">
             </div>
-            <h5>
-              Paused
-            </h5>
-            <p>
-              <label htmlFor="paused">
-                <input
-                  type="checkbox"
-                  id="paused"
-                  checked={paused}
-                  onChange={this.handlePause}
-                />
-                <span>Paused</span>
-              </label>
-            </p>
-            <h5>
-              Volume
-            </h5>
-            <input
-              type="range"
-              value={volume}
-              min={0}
-              max={1}
-              step={0.01}
-              onChange={this.handleVolume}
-            />
-            <h5>
-              Quality
-            </h5>
-            <select className="browser-default" onChange={this.handleQuality}>
-              {qualities.map((quality) => (
-                <option key={quality} value={quality}>
-                  {quality}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="col s8 center-align">
-            <YouTube
-              video={video.id}
-              width={640}
-              height={480}
-              autoplay
-              controls={true}
-              suggestedQuality={suggestedQuality}
-              volume={volume}
-              paused={paused}
-              onPause={this.handlePlayerPause}
-              onPlaying={this.handlePlayerPlay}
-              onStateChange={this.handleStateChange}
-              startSeconds={startSeconds}
-            />
           </div>
         </div>
       </div>
     )
   }
+
+  init() {
+    var tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+  }
+
+  onPlayerStateChange(event) {
+    console.log(event)
+    switch (event.data) {
+      case window['YT'].PlayerState.PLAYING:
+        if (this.cleanTime() == 0) {
+          console.log('started ' + this.cleanTime());
+        } else {
+          console.log('playing ' + this.cleanTime())
+        };
+        break;
+      case window['YT'].PlayerState.PAUSED:
+        if (this.player.getDuration() - this.player.getCurrentTime() != 0) {
+          console.log('paused' + ' @ ' + this.cleanTime());
+        };
+        break;
+      case window['YT'].PlayerState.ENDED:
+        console.log('ended ');
+        break;
+    };
+  };
+  //utility
+  cleanTime() {
+    return Math.round(this.player.getCurrentTime())
+  };
+  onPlayerError(event) {
+    switch (event.data) {
+      case 2:
+        console.log('' + this.video)
+        break;
+      case 100:
+        break;
+      case 101 || 150:
+        break;
+    };
+  };
+
+
 }
 
 function mapStateToProps(state, ownProps) {
