@@ -1,0 +1,12 @@
+{
+  "name": "WeLook",
+  "displayName": "WeLook",
+  "expo": {
+    "name": "WeLook",
+    "slug": "WeLook",
+    "version": "1.0.0",
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
