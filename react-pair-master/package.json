@@ -47,7 +47,7 @@
     "redux-promise": "^0.5.3",
     "redux-thunk": "^2.1.0",
     "serve-favicon": "^2.3.0",
-    "socket.io": "^1.5.1"
+    "socket.io": "^4.5.3"
   },
   "devDependencies": {
     "babel-cli": "6.8.0",
